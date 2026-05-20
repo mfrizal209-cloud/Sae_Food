@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-  <title>Sae Food — Cita Rasa & Suasana Hati</title>
+  <title>Sae Food — Cita Rasa & Suasana Hati | Points Rewards</title>
 
   <!-- Google Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,7 +57,6 @@
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     
-    /* Scroll area utama yang smooth tanpa penghalang */
     .main-scroll-area { 
       flex: 1; 
       overflow-y: auto; 
@@ -66,7 +65,6 @@
       scroll-behavior: smooth;
     }
     
-    /* Flash Card Grid yang rapi dan scrollable */
     .flash-grid-modern {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
@@ -81,6 +79,7 @@
       transition: all 0.25s ease;
       cursor: pointer;
       border: 1px solid rgba(59,130,246,0.3);
+      position: relative;
     }
     .flash-food-item:hover {
       transform: translateY(-5px);
@@ -107,8 +106,25 @@
       transition: all 0.2s;
     }
     .btn-primary-glow:active { transform: scale(0.97); }
-    
-    /* Loading overlay */
+    .btn-points {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border: none;
+      border-radius: 30px;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 4px 12px;
+      transition: all 0.2s;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .btn-points:active { transform: scale(0.95); }
+    .btn-points-disabled {
+      background: #475569;
+      opacity: 0.6;
+      cursor: not-allowed;
+      pointer-events: none;
+      filter: grayscale(0.2);
+    }
     .logout-loading {
       position: fixed;
       top: 0;
@@ -126,13 +142,36 @@
       color: white;
       font-weight: 500;
     }
-    
-    /* Hilangkan semua border yang mengganggu di konten dinamis */
-    #dynamicContentArea {
-      scrollbar-width: thin;
+    /* modal iframe points */
+    .points-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 20010;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeSlide 0.25s ease;
     }
-    .no-barrier {
-      border: none !important;
+    .points-modal-content {
+      width: 90%;
+      max-width: 1100px;
+      height: 85vh;
+      background: #0f172a;
+      border-radius: 32px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3b82f680;
+      box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+    }
+    .points-iframe {
+      width: 100%;
+      flex: 1;
+      border: none;
+      background: white;
     }
   </style>
 </head>
@@ -174,9 +213,8 @@
     </div>
   </div>
 
-  <!-- HOME + MAPS dengan tata letak sangat responsif & scroll smooth -->
+  <!-- HOME + MAPS -->
   <div id="appHome" class="hidden flex flex-col h-screen">
-    <!-- Header welcome + logout -->
     <div class="glass-modern mx-3 mt-3 rounded-2xl p-3 flex justify-between items-center z-20 shadow-md">
       <div>
         <h2 class="text-white font-bold text-lg flex items-center gap-2"><i class="fas fa-map-marked-alt text-blue-400"></i> Sae Food AI</h2>
@@ -185,7 +223,6 @@
       <button id="logoutButton" class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex gap-1 items-center transition"><i class="fas fa-sign-out-alt"></i> Keluar</button>
     </div>
 
-    <!-- Search, filter, dan AI Mood ditempatkan rapi -->
     <div class="glass-modern mx-3 mt-2 rounded-2xl p-3 shadow-md z-10">
       <div class="relative mb-2">
         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-300 text-sm"></i>
@@ -200,24 +237,19 @@
       </div>
     </div>
 
-    <!-- Peta Leaflet dengan border halus -->
     <div class="mx-3 mt-2">
       <div id="map" class="rounded-2xl overflow-hidden shadow-xl border border-blue-500/20"></div>
     </div>
 
-    <!-- Panel scrollable utama: rekomendasi & flash cards (tanpa garis penghalang berlebih) -->
     <div class="main-scroll-area mt-2 mx-3 mb-3">
       <div class="glass-modern rounded-2xl flex flex-col h-full overflow-hidden">
-        <!-- Tombol Tampilkan Semua Menu -->
         <div class="px-3 pt-3 pb-1">
           <button id="showAllFlashBtn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-md btn-primary-glow">
             <i class="fas fa-th-large"></i> Tampilkan Semua Menu
           </button>
         </div>
 
-        <!-- AREA KONTEN DINAMIS: scroll mulus tanpa barrier -->
         <div id="dynamicContentArea" class="px-3 pb-4 pt-1 flex-1 overflow-y-auto custom-scroll">
-          <!-- Default: 3 rekomendasi terdekat -->
           <div id="nearbySection">
             <div class="flex justify-between items-center mb-2 mt-1">
               <h3 class="text-white font-semibold flex gap-2 text-sm"><i class="fas fa-location-dot text-cyan-400"></i> 3 Rekomendasi Terdekat</h3>
@@ -230,9 +262,7 @@
               <h3 class="text-white font-semibold flex gap-2 text-sm"><i class="fas fa-archive text-blue-300"></i> Semua Menu Kuliner</h3>
               <button id="closeFlashViewBtn" class="text-blue-300 text-xs bg-blue-900/50 px-2 py-1 rounded-full hover:bg-blue-800 transition"><i class="fas fa-arrow-left"></i> Kembali</button>
             </div>
-            <div id="flashCardGrid" class="flash-grid-modern">
-              <!-- Flash card akan diisi JS -->
-            </div>
+            <div id="flashCardGrid" class="flash-grid-modern"></div>
           </div>
         </div>
       </div>
@@ -268,6 +298,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznNjV9UNUoK3FP_-pZg1GcSwddGSQvllmANlTtHQzU1tfe-Y9vlN3gjFQeqnhJeUb0/exec";
     const SHEET_FOOD_URL = "https://opensheet.elk.sh/1bV4d9W1Wv5FibcVIY8-3tqHSqCXr71R1-v-ojkcnpXA/Sheet1";
+    const POINTS_REWARD_URL = "https://mfrizal209-cloud.github.io/input-point/";
     
     let masterFoods = [];
     let currentUser = { nama: "" };
@@ -284,40 +315,51 @@
       setTimeout(() => toast.classList.add("translate-x-[120%]", "opacity-0"), 2800);
     }
 
+    // === POINTS MODAL IFRAME ===
+    function openPointsModal(foodName) {
+      const modalDiv = document.createElement('div');
+      modalDiv.className = 'points-modal';
+      modalDiv.id = 'pointsModalContainer';
+      modalDiv.innerHTML = `
+        <div class="points-modal-content">
+          <div class="flex justify-between items-center p-4 bg-slate-800/80 border-b border-blue-500/40">
+            <h3 class="text-white font-bold"><i class="fas fa-star text-yellow-400 mr-2"></i> Klaim Points: ${escapeHtml(foodName)}</h3>
+            <button id="closePointsModalBtn" class="text-white bg-red-500/70 hover:bg-red-600 w-8 h-8 rounded-full text-xl font-bold">✕</button>
+          </div>
+          <iframe class="points-iframe" src="${POINTS_REWARD_URL}" title="Reward Points" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>
+        </div>
+      `;
+      document.body.appendChild(modalDiv);
+      document.getElementById('closePointsModalBtn').addEventListener('click', () => {
+        modalDiv.remove();
+      });
+      modalDiv.addEventListener('click', (e) => { if(e.target === modalDiv) modalDiv.remove(); });
+    }
+    
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
     function logout() {
       const loadingOverlay = document.createElement('div');
       loadingOverlay.className = 'logout-loading';
       loadingOverlay.innerHTML = '<i class="fas fa-spinner fa-spin text-3xl text-blue-400"></i><p>Keluar dari akun...</p>';
       document.body.appendChild(loadingOverlay);
-      
       setTimeout(() => {
         localStorage.removeItem("sae_user_nama");
         localStorage.clear();
         currentUser.nama = "";
         masterFoods = [];
         isFlashMode = false;
-        
-        if (map) {
-          map.remove();
-          map = null;
-          userMarker = null;
-          allMarkers = [];
-          isMapInitialized = false;
-        }
-        
+        if (map) { map.remove(); map = null; userMarker = null; allMarkers = []; isMapInitialized = false; }
         document.getElementById("appHome").classList.add("hidden");
         const authWrapper = document.getElementById("authWrapper");
         authWrapper.classList.remove("hidden");
-        
         document.getElementById("loginHp").value = "";
         document.getElementById("loginPassword").value = "";
         document.getElementById("regNama").value = "";
         document.getElementById("regHp").value = "";
         document.getElementById("regPassword").value = "";
-        
         document.getElementById("loginBox").classList.remove("hidden");
         document.getElementById("registerBox").classList.add("hidden");
-        
         loadingOverlay.remove();
         showToast("Anda telah keluar dari akun", false);
       }, 300);
@@ -335,7 +377,6 @@
         loadingDiv.classList.add("hidden");
         if (data.status === "success") {
           localStorage.setItem("sae_user_nama", data.nama);
-          showToast(``);
           currentUser.nama = data.nama;
           pindahKeHome(data.nama);
         } else showToast(data.message || "Login gagal", true);
@@ -430,19 +471,17 @@
       if (!masterFoods.length || !map) return;
       const filtered = getFilteredFoods();
       document.getElementById("foodCountBadge").innerHTML = `${filtered.length} item`;
-      
       allMarkers.forEach(m => map.removeLayer(m));
       allMarkers = [];
       filtered.forEach(food => {
         const lat = parseFloat(food.latitude), lng = parseFloat(food.longitude);
         if (!isNaN(lat) && !isNaN(lng)) {
           const marker = L.marker([lat, lng]).addTo(map);
-          marker.bindPopup(`<b>${food["Nama Makanan"]}</b><br>${food.distance.toFixed(1)} km`);
+          marker.bindPopup(`<b>${food["Nama Makanan"]}</b><br>${food.distance.toFixed(1)} km<br><button onclick="window.tampilkanDetail(${JSON.stringify(food).replace(/'/g, "\\'")})">Detail</button>`);
           marker.on("click", () => tampilkanDetail(food));
           allMarkers.push(marker);
         }
       });
-
       if (isFlashMode) {
         document.getElementById("nearbySection").classList.add("hidden");
         document.getElementById("flashCardSection").classList.remove("hidden");
@@ -452,6 +491,11 @@
         document.getElementById("flashCardSection").classList.add("hidden");
         renderTop3Recommendations(filtered);
       }
+    }
+
+    // Helper untuk cek jarak (< 0.5 km = 500 meter)
+    function isWithin500Meters(foodDistKm) {
+      return foodDistKm !== undefined && foodDistKm <= 0.5;
     }
 
     function renderTop3Recommendations(filtered) {
@@ -464,14 +508,21 @@
       container.innerHTML = "";
       top3.forEach(food => {
         const distKm = food.distance.toFixed(1);
+        const within500 = isWithin500Meters(food.distance);
         container.innerHTML += `
-          <div onclick='tampilkanDetail(${JSON.stringify(food).replace(/'/g, "&#39;")})' class="glass-card rounded-xl p-2.5 cursor-pointer border border-blue-400/30 transition hover:bg-blue-800/30">
+          <div class="glass-card rounded-xl p-2.5 border border-blue-400/30 transition hover:bg-blue-800/30">
             <div class="flex gap-2.5">
               <img src="${food["Link Gambar"] || 'https://placehold.co/80x80?text=Food'}" class="w-16 h-16 rounded-xl object-cover shadow" onerror="this.src='https://placehold.co/80x80?text=Yummy'">
               <div class="flex-1">
                 <div class="flex justify-between items-start"><h4 class="text-white font-bold text-sm">${food["Nama Makanan"]}</h4><span class="text-cyan-300 text-[10px] bg-blue-900/50 px-1.5 rounded-full whitespace-nowrap ml-1"><i class="fas fa-map-pin"></i> ${distKm} km</span></div>
                 <p class="text-gray-300 text-xs line-clamp-2 mt-0.5">${food["Deskripsi Makanan"] || "Lezat dan menggoda"}</p>
-                <div class="flex justify-between items-center mt-1"><span class="text-blue-300 font-semibold text-xs">Rp${food.Harga || "-"}</span><button class="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-[10px]">Detail</button></div>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="text-blue-300 font-semibold text-xs">Rp${food.Harga || "-"}</span>
+                  <div class="flex gap-1">
+                    <button onclick='window.tampilkanDetail(${JSON.stringify(food).replace(/'/g, "&#39;")})' class="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-[10px]">Detail</button>
+                    <button onclick='window.handlePointsClick(${JSON.stringify(food).replace(/'/g, "&#39;")})' class="btn-points ${!within500 ? 'btn-points-disabled' : ''}" ${!within500 ? 'disabled' : ''}><i class="fas fa-coins mr-1"></i> Points</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -488,8 +539,9 @@
       let html = "";
       filteredArray.forEach(f => {
         const imgSrc = f["Link Gambar"] || "https://placehold.co/300x200?text=Kuliner";
+        const within500 = isWithin500Meters(f.distance);
         html += `
-          <div onclick='tampilkanDetail(${JSON.stringify(f).replace(/'/g, "&#39;")})' class="flash-food-item">
+          <div class="flash-food-item" data-food-name="${f["Nama Makanan"]}">
             <img src="${imgSrc}" class="flash-img" onerror="this.src='https://placehold.co/300x200?text=Makanan'">
             <div class="p-2.5">
               <h4 class="text-white font-bold text-xs line-clamp-1">${f["Nama Makanan"]}</h4>
@@ -498,13 +550,37 @@
                 <span class="badge-kategori text-blue-200 text-[9px]">${f.Kategori || "Kuliner"}</span>
               </div>
               <p class="text-gray-400 text-[10px] line-clamp-2 mt-1">${(f["Deskripsi Makanan"] || "Nikmati kelezatan").slice(0,60)}</p>
-              <div class="mt-1 flex items-center text-[9px] text-blue-300"><i class="fas fa-location-dot mr-1"></i> ${f.distance ? f.distance.toFixed(1) : '?'} km</div>
+              <div class="flex justify-between items-center mt-2">
+                <div class="flex items-center text-[9px] text-blue-300"><i class="fas fa-location-dot mr-1"></i> ${f.distance ? f.distance.toFixed(1) : '?'} km</div>
+                <button onclick='window.handlePointsClick(${JSON.stringify(f).replace(/'/g, "&#39;")})' class="btn-points ${!within500 ? 'btn-points-disabled' : ''}" ${!within500 ? 'disabled' : ''} style="font-size:9px; padding:3px 10px;"><i class="fas fa-star"></i> Points</button>
+              </div>
             </div>
           </div>
         `;
       });
       grid.innerHTML = html;
+      // Pasang event detail pada seluruh flash-card-item (agar tetap dapat klik card untuk detail)
+      document.querySelectorAll('.flash-food-item').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // cegah jika target adalah tombol points
+          if(e.target.closest('.btn-points')) return;
+          const namaMakanan = card.getAttribute('data-food-name');
+          const foodItem = filteredArray.find(f => f["Nama Makanan"] === namaMakanan);
+          if(foodItem) tampilkanDetail(foodItem);
+        });
+      });
     }
+
+    // Global handler untuk Points
+    window.handlePointsClick = function(food) {
+      const dist = food.distance;
+      if(dist === undefined || dist > 0.5) {
+        showToast(`⚠️ POINTS hanya bisa diklaim jika jarak < 500 meter! (Saat ini ${dist?.toFixed(1) || '?'} km)`, true);
+        return;
+      }
+      // Buka modal points dengan iframe
+      openPointsModal(food["Nama Makanan"]);
+    };
 
     function tampilkanDetail(food) {
       const modal = document.getElementById("detailModal");
@@ -516,6 +592,9 @@
         <p class="text-blue-200 text-sm mt-2">${food["Deskripsi Makanan"] || "Nikmati cita rasa khas Nusantara"}</p>
         <div class="mt-4 space-y-2 bg-white/5 p-3 rounded-xl"><p class="text-white text-sm"><i class="fas fa-location-dot text-blue-400 w-5"></i> ${food.Alamat || "Alamat tersedia di Maps"}</p><p class="text-cyan-300 font-bold">💰 Rp${food.Harga || "—"}</p><p class="text-gray-300 text-sm"><i class="fas fa-tag"></i> ${food.Kategori || "Kuliner"}</p></div>
         <a href="${food["Lokasi Link Maps"] || "#"}" target="_blank" class="block mt-5 bg-blue-600 text-center p-3 rounded-xl text-white font-semibold flex gap-2 justify-center"><i class="fab fa-google"></i> Navigasi Google Maps</a>
+        <div class="mt-3">
+          <button onclick='window.handlePointsClick(${JSON.stringify(food).replace(/'/g, "&#39;")})' class="btn-points w-full mt-2 ${!(food.distance !== undefined && food.distance <= 0.5) ? 'btn-points-disabled' : ''}" ${!(food.distance !== undefined && food.distance <= 0.5) ? 'disabled' : ''}><i class="fas fa-coins mr-1"></i> Klaim Points (jarak ${food.distance?.toFixed(1) || '?'} km)</button>
+        </div>
       `;
     }
     function closeDetailModal() { document.getElementById("detailModal").classList.add("hidden"); }
@@ -565,6 +644,7 @@
     };
     window.closeDetailModal = closeDetailModal;
     window.tampilkanDetail = tampilkanDetail;
+    window.handlePointsClick = handlePointsClick;
   </script>
 </body>
 </html>
