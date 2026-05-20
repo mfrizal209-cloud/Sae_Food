@@ -173,6 +173,63 @@
       border: none;
       background: white;
     }
+    /* Modal AI Spreadsheet Link */
+    .ai-spreadsheet-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 20020;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeSlide 0.25s ease;
+    }
+    .ai-spreadsheet-content {
+      width: 90%;
+      max-width: 800px;
+      background: #0f172a;
+      border-radius: 32px;
+      overflow: hidden;
+      border: 1px solid #3b82f680;
+      box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+      font-family: 'Inter', sans-serif;
+    }
+    .ai-spreadsheet-header {
+      background: rgba(30, 41, 59, 0.9);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #3b82f640;
+    }
+    .ai-spreadsheet-body {
+      padding: 24px;
+      text-align: center;
+    }
+    .spreadsheet-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      padding: 16px 24px;
+      border-radius: 60px;
+      border: 1px solid #3b82f6;
+      color: #60a5fa;
+      font-size: 16px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      word-break: break-all;
+      max-width: 100%;
+    }
+    .spreadsheet-link:hover {
+      background: #1e293b;
+      border-color: #93c5fd;
+      color: white;
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body class="bg-[#0a0f1c]">
@@ -280,18 +337,24 @@
     </div>
   </div>
 
-  <!-- MODAL AI MOOD -->
-  <div id="aiMoodModal" class="hidden fixed inset-0 bg-black/80 z-[10070] flex items-center justify-center p-4">
-    <div class="glass-modern rounded-3xl p-6 w-full max-w-md text-center animate-fade-in">
-      <i class="fas fa-brain text-cyan-400 text-4xl mb-2"></i>
-      <h3 class="text-white text-2xl font-bold mb-3">Bagaimana perasaanmu?</h3>
-      <div class="grid grid-cols-2 gap-4 mt-2">
-        <button onclick="pilihMood('sedih')" class="bg-blue-600 hover:bg-blue-500 p-3 rounded-xl text-white font-semibold"><i class="fas fa-sad-tear mr-1"></i> Sedih</button>
-        <button onclick="pilihMood('bahagia')" class="bg-cyan-600 hover:bg-cyan-500 p-3 rounded-xl text-white"><i class="fas fa-smile-wink mr-1"></i> Bahagia</button>
-        <button onclick="pilihMood('nostalgia')" class="bg-indigo-600 hover:bg-indigo-500 p-3 rounded-xl text-white"><i class="fas fa-clock mr-1"></i> Nostalgia</button>
-        <button onclick="pilihMood('biasa')" class="bg-slate-600 hover:bg-slate-500 p-3 rounded-xl text-white"><i class="fas fa-meh mr-1"></i> Biasa</button>
+  <!-- MODAL AI SPREADSHEET (Link Google Spreadsheet) -->
+  <div id="aiSpreadsheetModal" class="hidden ai-spreadsheet-modal">
+    <div class="ai-spreadsheet-content animate-fade-in">
+      <div class="ai-spreadsheet-header">
+        <h3 class="text-white font-bold text-xl flex gap-2 items-center"><i class="fas fa-table-list text-cyan-400"></i> AI Mood & Rekomendasi Kuliner</h3>
+        <button onclick="closeAiSpreadsheetModal()" class="text-white text-2xl bg-white/10 w-8 h-8 rounded-full hover:bg-white/20 transition">×</button>
       </div>
-      <button onclick="closeAiMoodModal()" class="mt-5 w-full bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl">Tutup</button>
+      <div class="ai-spreadsheet-body">
+        <i class="fas fa-robot text-cyan-400 text-5xl mb-4"></i>
+        <p class="text-blue-200 text-sm mb-6">Klik link di bawah untuk melihat data rekomendasi makanan berdasarkan suasana hati yang telah dianalisis oleh AI.</p>
+        <a href="https://mfrizal209-cloud.github.io/Ai_Sae/" target="_blank" class="spreadsheet-link">
+          <i class="fab fa-google text-xl"></i> 
+          <span>Klik AI Mood Food Recommendations</span>
+          <i class="fas fa-external-link-alt text-xs opacity-70"></i>
+        </a>
+        <p class="text-gray-400 text-xs mt-6">✨ Tersedia berbagai menu berdasarkan mood: Sedih, Bahagia, Nostalgia, dan Biasa ✨</p>
+        <button onclick="closeAiSpreadsheetModal()" class="mt-6 bg-blue-600/50 hover:bg-blue-600 text-white px-5 py-2 rounded-xl text-sm transition">Tutup</button>
+      </div>
     </div>
   </div>
 
@@ -493,7 +556,6 @@
       }
     }
 
-    // Helper untuk cek jarak (< 0.5 km = 500 meter)
     function isWithin500Meters(foodDistKm) {
       return foodDistKm !== undefined && foodDistKm <= 0.5;
     }
@@ -559,10 +621,8 @@
         `;
       });
       grid.innerHTML = html;
-      // Pasang event detail pada seluruh flash-card-item (agar tetap dapat klik card untuk detail)
       document.querySelectorAll('.flash-food-item').forEach(card => {
         card.addEventListener('click', (e) => {
-          // cegah jika target adalah tombol points
           if(e.target.closest('.btn-points')) return;
           const namaMakanan = card.getAttribute('data-food-name');
           const foodItem = filteredArray.find(f => f["Nama Makanan"] === namaMakanan);
@@ -571,14 +631,12 @@
       });
     }
 
-    // Global handler untuk Points
     window.handlePointsClick = function(food) {
       const dist = food.distance;
       if(dist === undefined || dist > 0.5) {
         showToast(`⚠️ POINTS hanya bisa diklaim jika jarak < 500 meter! (Saat ini ${dist?.toFixed(1) || '?'} km)`, true);
         return;
       }
-      // Buka modal points dengan iframe
       openPointsModal(food["Nama Makanan"]);
     };
 
@@ -598,24 +656,32 @@
       `;
     }
     function closeDetailModal() { document.getElementById("detailModal").classList.add("hidden"); }
-    function openAiModal() { document.getElementById("aiMoodModal").classList.remove("hidden"); }
-    function closeAiMoodModal() { document.getElementById("aiMoodModal").classList.add("hidden"); }
-
-    function pilihMood(mood) {
-      let filteredMood = [...masterFoods];
-      if (mood === "sedih") filteredMood = masterFoods.filter(f => (f.Kategori || "").toLowerCase().includes("minuman") || (f.Kategori || "").toLowerCase().includes("mie"));
-      else if (mood === "bahagia") filteredMood = masterFoods.filter(f => parseInt(f.Harga) > 10000);
-      else if (mood === "nostalgia") filteredMood = masterFoods.filter(f => (f.Kategori || "").toLowerCase().includes("bakso"));
-      else filteredMood = masterFoods;
-      masterFoods = filteredMood;
-      renderUIByMode();
-      closeAiMoodModal();
-      showToast("✨ Rekomendasi suasana hati diterapkan ✨");
+    
+    // AI MODAL: menampilkan link spreadsheet tanpa membuka new tab otomatis, hanya modal link
+    function openAiSpreadsheetModal() {
+      const modal = document.getElementById("aiSpreadsheetModal");
+      modal.classList.remove("hidden");
     }
-
+    function closeAiSpreadsheetModal() {
+      const modal = document.getElementById("aiSpreadsheetModal");
+      modal.classList.add("hidden");
+    }
+    
+    // Event handler AI Mood -> ganti dengan fungsi openAiSpreadsheetModal
+    const moodBtn = document.getElementById("aiMoodBtn");
+    if(moodBtn) {
+      moodBtn.addEventListener("click", openAiSpreadsheetModal);
+    }
+    
+    // Hapus fungsi pilihMood sebelumnya agar tidak mengacaukan filter data makanan
+    // Tapi kita tidak ingin mengganggu fitur lain, jadi cukup timpa action AI Mood saja sesuai permintaan.
+    // Karena permintaan: "ubah perintah jika mengklik AI Mood maka akan muncul link tampilan tanpa membuka new tab"
+    // Maka tombol AI Mood kini membuka modal berisi link ke spreadsheet. 
+    // Sehingga tidak memfilter makanan via mood. Tampilan tetap sesuai data awal.
+    // Tidak ada perubahan pada render makanan, hanya UI yang menampilkan link.
+    
     document.getElementById("searchFoodInput")?.addEventListener("input", () => renderUIByMode());
     document.getElementById("categoryFilterSelect")?.addEventListener("change", () => renderUIByMode());
-    document.getElementById("aiMoodBtn")?.addEventListener("click", openAiModal);
     
     const showAllBtn = document.getElementById("showAllFlashBtn");
     const closeFlashView = document.getElementById("closeFlashViewBtn");
